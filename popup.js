@@ -12,10 +12,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     patternList.addEventListener('click', function (event) {
-        console.log(event)
         if (event.target.classList.contains('delete-button')) {
             var pattern = event.target.dataset.pattern;
             removePattern(pattern);
+        } else if (event.target.classList.contains('edit-button')) {
+            var pattern = event.target.dataset.pattern;
+            var li = event.target.parentElement;
+            editPattern(pattern, li);
         }
     });
 
@@ -38,6 +41,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function editPattern(pattern, li) {
+        var input = li.querySelector('.pattern-input');
+        input.disabled = false;
+        input.focus();
+        input.addEventListener('blur', function () {
+            var updatedPattern = input.value;
+            var patterns = JSON.parse(localStorage.getItem('patterns')) || [];
+            var index = patterns.indexOf(pattern);
+            if (index > -1) {
+                patterns[index] = updatedPattern;
+                localStorage.setItem('patterns', JSON.stringify(patterns));
+            }
+            input.disabled = true;
+        });
+    }
+
     function loadPatterns() {
         var patterns = JSON.parse(localStorage.getItem('patterns')) || [];
         patterns.forEach(function (pattern) {
@@ -51,14 +70,21 @@ document.addEventListener('DOMContentLoaded', function () {
         var input = document.createElement('input');
         input.type = 'text';
         input.value = pattern;
+        input.className = 'pattern-input';
+        input.disabled = true;
         li.appendChild(input);
 
+        var editButton = document.createElement('button');
+        editButton.className = 'btn-small edit-button';
+        editButton.textContent = 'Edit';
+        editButton.dataset.pattern = pattern;
+        li.appendChild(editButton);
+        
         var deleteButton = document.createElement('button');
         deleteButton.className = 'btn-small red delete-button';
         deleteButton.textContent = 'Delete';
         deleteButton.dataset.pattern = pattern;
         li.appendChild(deleteButton);
-
 
         patternList.appendChild(li);
     }
