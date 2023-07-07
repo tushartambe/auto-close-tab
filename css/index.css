@@ -1,0 +1,14 @@
+.popup {
+    width: 650px;
+    height: 350px;
+    overflow: scroll;
+}
+
+.delete-button {
+    margin-left: 10px;
+}
+
+li{
+    display: flex;
+    align-items: flex-start;
+}
