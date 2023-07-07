@@ -12,11 +12,19 @@
 <body class="popup">
     <div class="container">
         <h4 class="center-align">Auto Close Tab</h4>
-        <div class="input-field">
-            <input type="text" id="urlInput" placeholder="Enter URL Pattern">
-            <label for="urlInput">URL Pattern</label>
+        <div class="row">
+            <div class="input-field col s5">
+                <input type="text" id="urlInput" placeholder="Enter URL Pattern">
+                <label for="urlInput">URL Pattern</label>
+            </div>
+            <div class="input-field col s4">
+                <input type="number" id="timeoutInput" placeholder="Enter Timeout (seconds)" value="10">
+                <label for="timeoutInput">Timeout (seconds)</label>
+            </div>
+            <div class="col s3">
+                <button class="btn waves-effect waves-light" id="addButton">Add</button>
+            </div>
         </div>
-        <button class="btn waves-effect waves-light" id="addButton">Add</button>
         <ul id="patternList" class="collection"></ul>
     </div>
 </body>

@@ -5,12 +5,12 @@ chrome.runtime.onInstalled.addListener(function () {
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     if (changeInfo.url) {
         var patterns = JSON.parse(localStorage.getItem('patterns')) || [];
-        patterns.forEach(function (pattern) {
-            if (new RegExp(pattern).test(changeInfo.url)) {
+        patterns.forEach(function (patternObj) {
+            if (new RegExp(patternObj.pattern).test(changeInfo.url)) {
                 console.log("MATCHED FOR", { changeInfo, tab });
                 setTimeout(function () {
                     chrome.tabs.remove(tabId);
-                }, 5000);
+                }, patternObj.timeout * 1000); // Convert timeout value to milliseconds
             }
         });
     }

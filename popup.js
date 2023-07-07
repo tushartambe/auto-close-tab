@@ -1,13 +1,25 @@
 document.addEventListener('DOMContentLoaded', function () {
     var addButton = document.getElementById('addButton');
     var urlInput = document.getElementById('urlInput');
+    var timeoutInput = document.getElementById('timeoutInput');
     var patternList = document.getElementById('patternList');
+    var editMode = false;
+    var patternToEdit = null;
 
     addButton.addEventListener('click', function () {
         var pattern = urlInput.value;
-        if (pattern) {
-            storePattern(pattern);
+        var timeout = parseInt(timeoutInput.value) || 10; // Parse timeout value, default to 10 seconds if invalid
+        if (pattern && timeout >= 10) { // Check if timeout is greater than or equal to 10
+            if (editMode) {
+                updatePattern(pattern, timeout);
+                exitEditMode();
+            } else {
+                storePattern(pattern, timeout);
+            }
             urlInput.value = '';
+            timeoutInput.value = '';
+        } else {
+            alert('Timeout value should be 10 seconds or greater.');
         }
     });
 
@@ -18,22 +30,103 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (event.target.classList.contains('edit-button')) {
             var pattern = event.target.dataset.pattern;
             var li = event.target.parentElement;
-            editPattern(pattern, li);
+            enterEditMode(pattern, li);
+        } else if (event.target.classList.contains('update-button')) {
+            var pattern = event.target.dataset.pattern;
+            var li = event.target.parentElement;
+            var input = li.querySelector('.pattern-input');
+            var timeoutInput = li.querySelector('.timeout-input');
+            var patternValue = input.value;
+            var timeoutValue = parseInt(timeoutInput.value) || 10; // Parse timeout value, default to 10 seconds if invalid
+            if (patternValue && timeoutValue >= 10) { // Check if timeout is greater than or equal to 10
+                updatePattern(pattern, patternValue, timeoutValue);
+                exitEditMode();
+            } else {
+                alert('Timeout value should be 10 seconds or greater.');
+            }
         }
     });
 
-    loadPatterns();
+    function enterEditMode(pattern, li) {
+        exitEditMode(); // Exit any previous edit mode first
+        editMode = true;
+        patternToEdit = pattern;
 
-    function storePattern(pattern) {
+        var input = li.querySelector('.pattern-input');
+        var timeoutInput = li.querySelector('.timeout-input');
+        var editButton = li.querySelector('.edit-button');
+        var deleteButton = li.querySelector('.delete-button');
+
+        input.disabled = false;
+        timeoutInput.disabled = false;
+        editButton.style.display = 'none'; // Hide the edit button
+        deleteButton.style.display = 'none';
+
+        var updateButton = document.createElement('button');
+        updateButton.className = 'btn-small update-button';
+        updateButton.textContent = 'Update';
+        updateButton.dataset.pattern = pattern;
+        li.appendChild(updateButton);
+    }
+
+    function exitEditMode() {
+        editMode = false;
+        patternToEdit = null;
+
+        var updateButton = patternList.querySelector('.update-button');
+        if (updateButton) {
+            var li = updateButton.parentElement;
+            li.removeChild(updateButton);
+        }
+
+        var input = patternList.querySelector('.pattern-input');
+        var timeoutInput = patternList.querySelector('.timeout-input');
+        var editButton = patternList.querySelector('.edit-button');
+        var deleteButton = patternList.querySelector('.delete-button');
+
+        if (input) {
+            input.disabled = true;
+        }
+        if (timeoutInput) {
+            timeoutInput.disabled = true;
+        }
+        if (editButton) {
+            editButton.style.display = 'inline'; // Show the edit button
+        }
+        if (deleteButton) {
+            deleteButton.style.display = 'inline';
+        }
+    }
+
+    function updatePattern(pattern, patternValue, timeoutValue) {
         var patterns = JSON.parse(localStorage.getItem('patterns')) || [];
-        patterns.push(pattern);
+        var index = patterns.findIndex(function (patternObj) {
+            return patternObj.pattern === patternToEdit;
+        });
+        if (index > -1) {
+            patterns[index].pattern = patternValue;
+            patterns[index].timeout = timeoutValue;
+            localStorage.setItem('patterns', JSON.stringify(patterns));
+            refreshPatternList();
+        }
+    }
+
+    function storePattern(pattern, timeout) {
+        var patterns = JSON.parse(localStorage.getItem('patterns')) || [];
+        var patternObj = {
+            pattern: pattern,
+            timeout: timeout
+        };
+        patterns.push(patternObj);
         localStorage.setItem('patterns', JSON.stringify(patterns));
         refreshPatternList();
     }
 
     function removePattern(pattern) {
         var patterns = JSON.parse(localStorage.getItem('patterns')) || [];
-        var index = patterns.indexOf(pattern);
+        var index = patterns.findIndex(function (patternObj) {
+            return patternObj.pattern === pattern;
+        });
         if (index > -1) {
             patterns.splice(index, 1);
             localStorage.setItem('patterns', JSON.stringify(patterns));
@@ -41,30 +134,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function editPattern(pattern, li) {
-        var input = li.querySelector('.pattern-input');
-        input.disabled = false;
-        input.focus();
-        input.addEventListener('blur', function () {
-            var updatedPattern = input.value;
-            var patterns = JSON.parse(localStorage.getItem('patterns')) || [];
-            var index = patterns.indexOf(pattern);
-            if (index > -1) {
-                patterns[index] = updatedPattern;
-                localStorage.setItem('patterns', JSON.stringify(patterns));
-            }
-            input.disabled = true;
-        });
-    }
-
     function loadPatterns() {
         var patterns = JSON.parse(localStorage.getItem('patterns')) || [];
-        patterns.forEach(function (pattern) {
-            addPatternToList(pattern);
+        patterns.forEach(function (patternObj) {
+            addPatternToList(patternObj.pattern, patternObj.timeout);
         });
     }
 
-    function addPatternToList(pattern) {
+    function addPatternToList(pattern, timeout) {
         var li = document.createElement('li');
         li.className = 'collection-item';
         var input = document.createElement('input');
@@ -74,17 +151,25 @@ document.addEventListener('DOMContentLoaded', function () {
         input.disabled = true;
         li.appendChild(input);
 
-        var editButton = document.createElement('button');
-        editButton.className = 'btn-small edit-button';
-        editButton.textContent = 'Edit';
-        editButton.dataset.pattern = pattern;
-        li.appendChild(editButton);
-        
+        var timeoutInput = document.createElement('input');
+        timeoutInput.type = 'number';
+        timeoutInput.value = timeout;
+        timeoutInput.min = 10; // Set the minimum value to 10
+        timeoutInput.className = 'timeout-input';
+        timeoutInput.disabled = true;
+        li.appendChild(timeoutInput);
+
         var deleteButton = document.createElement('button');
         deleteButton.className = 'btn-small red delete-button';
         deleteButton.textContent = 'Delete';
         deleteButton.dataset.pattern = pattern;
         li.appendChild(deleteButton);
+
+        var editButton = document.createElement('button');
+        editButton.className = 'btn-small edit-button';
+        editButton.textContent = 'Edit';
+        editButton.dataset.pattern = pattern;
+        li.appendChild(editButton);
 
         patternList.appendChild(li);
     }
@@ -93,4 +178,6 @@ document.addEventListener('DOMContentLoaded', function () {
         patternList.innerHTML = '';
         loadPatterns();
     }
+
+    loadPatterns();
 });
