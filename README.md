@@ -2,6 +2,7 @@
 
 Auto Close Tab is a Chrome extension that allows you to automatically close tabs based on URL patterns and timeout values. It provides a convenient way to manage your browsing experience by automatically closing tabs that match specific URL patterns after a specified timeout.
 
+![image](media/auto-close-tab.png)
 ## Features
 
 - Add URL patterns and timeout values to the extension.
